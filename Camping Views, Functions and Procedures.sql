@@ -23,7 +23,11 @@ BEGIN
 END //
 DELIMITER ;
 
-CALL LäggTillBokning('2022-03-11 15:45:00', '2022-03-14', '2022-03-18', 1, 1, 'C101', '1900-10-06', '0123', '250', '100');
+CALL LäggTillBokning('2022-03-12 15:45:00', '2022-03-15', '2022-03-19', 1, 1, 'C101', '1900-10-06', '0123', '250', '100');
+CALL LäggTillBokning('2022-03-12 15:45:00', '2022-03-15', '2022-03-19', 2, 1, 'S101', '1900-10-06', '0123', '250', '100');
+
+select * from bokningstuga;
+select * from stuga;
 
 select * from bokningcamping;
 select * from campingplats;
@@ -68,7 +72,7 @@ select * from stuga;
 
 
 /*Visa bokningar för respektive boendetyp, vem som bokade och hur många nätter det gällde och visa dem utifrån antalet nätter*/
-select distinct bokning.Bokningsnummer, bokning.Startdatum, bokning.Slutdatum, Kunder.FörNamn, Kunder.EfterNamn, datediff(bokning.Slutdatum, bokning.Startdatum) as antalNätter from bokning inner join Kunder where bokning.PersonNummer = kunder.PersonNummer order by antalNätter;
+select distinct bokningstuga.BoendeID, bokningstuga.Startdatum, bokningstuga.Slutdatum, Kunder.FörNamn, Kunder.EfterNamn, datediff(bokningstuga.Slutdatum, bokningstuga.Startdatum) as antalNätter from bokningstuga inner join Kunder where bokningstuga.Födelsenummer = kunder.Födelsenummer order by antalNätter; #ev into
 
 
 
@@ -93,31 +97,61 @@ create function totalaPrisetFörBokning(Startdatum date, Slutdatum date, AntalVu
 	deterministic
     begin
     
-    declare prisBarn int;
-    declare prisVuxen int;
-    declare prisAllaVuxna int;
-    declare prisAllaBarn int;
-    declare prisFörBokning int;
-    declare totaltPris int;
-    declare prisPerDag int;
+    declare prisBarn float;
+    declare prisVuxen float;
+    declare prisAllaVuxna float;
+    declare prisAllaBarn float;
+    declare prisAntalPersoner float;
+    declare totaltPris float;
+    declare prisPerDag float;
+    declare antalDagar float;
+    #declare prisAllaDagar float;
     
-    set prisBarn = ifnull(parameterPrisBarn, 200);
-    set prisVuxen = ifnull(parameterPrisVuxen, 500);
+    set prisBarn = ifnull(parameterPrisBarn, 200.0);
+    set prisVuxen = ifnull(parameterPrisVuxen, 500.0);
     set prisAllaBarn = antalBarn * prisBarn;
-    set prisAllavuxna = antalVuxna * prisVuxen;
-    set prisFörBokning = prisAllaBarn + prisAllaVuxna;
-        
-    if (inBoendeID like 'C%') then
-		set prisPerDag = campingplats.GrundPrisPerDag_kr;
-	elseif (inBoendeID like 'S%') then
-		set prisPerDag = stuga.GrundPrisPerDag_kr;
-	end if;
+    set prisAllaVuxna = antalVuxna * prisVuxen;
+    set prisAntalPersoner = prisAllaBarn + prisAllaVuxna;
+	set antalDagar = datediff(Slutdatum, Startdatum);
     
-    set totaltPris = prisFörBokning + prisPerDag;
+    
+    if (inBoendeID like 'C%') then
+        (select GrundPrisPerDag_kr from campingplats where BoendeID = inBoendeID) into prisPerDag;
+        set totaltPris = prisPerDag * antalDagar;
+	elseif (inBoendeID like 'S%') then
+		(select GrundPrisPerDag_kr from stuga where BoendeID = inBoendeID) into prisPerDag;
+        set totaltPris = (prisAntalPersoner + prisPerDag) * antalDagar;
+	end if;
     
     return(totaltPris);
     end //
 delimiter ;
 
+#################################################################################################################
+drop function if exists ledigtBoende; 
 
+ delimiter //
+ CREATE FUNCTION ledigtBoende(inStartdatum date, inSlutdatum date, inBoendeID varchar(10)) RETURNS bool
+    DETERMINISTIC
+begin
+	declare ledigAttBoka bool;
+	declare antalBokade integer;
 
+	set antalBokade = -1;
+	
+    if (inBoendeID like 'C%') then
+		select count(*) into antalBokade from campingplats,bokningcamping where bokningcamping.Startdatum <= inSlutdatum and bokningcamping.Slutdatum >= inStartdatum and bokningcamping.BoendeID = inBoendeID; 
+	elseif (inBoendeID like 'S%') then
+		select count(*) into antalBokade from stuga,bokningstuga where bokningstuga.Startdatum <= inSlutdatum and bokningstuga.Slutdatum >= inStartdatum and bokningstuga.BoendeID = inBoendeID; 
+	end if;
+	
+	if (antalBokade > 0)then set ledigAttBoka = false; #is not availible
+	else set ledigAttBoka = true; #is availible
+	end if;
+
+	return(ledigAttBoka);
+	end //
+delimiter ;
+
+select * from bokningstuga;
+select ledigtBoende('2022-03-15','2022-03-19','S101');
