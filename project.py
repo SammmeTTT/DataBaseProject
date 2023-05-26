@@ -1,5 +1,5 @@
 import mysql.connector
-#from mysqlx.errors import DatabaseError
+from mysql.connector import Error
 
 #Välkommen till BTHs nya campings bokningssystem
 
@@ -15,7 +15,6 @@ db = mysql.connector.connect(
     database = "dv1663camping"
 )
 
-
 campingCursor = db.cursor()
 
 #campingCursor.execute("SELECT * FROM bokningcamping where AntalVuxna = 2");
@@ -23,9 +22,9 @@ campingCursor = db.cursor()
 #campingCursor.execute("SELECT * FROM KunderÅrtionde")
 
 
-
 def showSelect():
-    for x in campingCursor:
+    result = campingCursor.fetchall()
+    for x in result:
         print(x)
 
 def egetSelectStatement():
@@ -35,19 +34,20 @@ def egetSelectStatement():
 
 def läggTillEnKund():
     födelseDatum = input("Skriv in födelse datum på formatet (YYYY-MM-DD): ")
-    födelseNummer = input("Skriv in de fyra sista siffrorna i ditt personnummer")
-    mobilNummer = input("Skriv in ditt mobilNummer")
-    email = input("Skriv in din email address")
-    förNamn = input("Skriv in ditt förnamn")
-    efterNamn = input("Skriv in ditt efternamn")
+    födelseNummer = input("Skriv in de fyra sista siffrorna i ditt personnummer: ")
+    mobilNummer = input("Skriv in ditt mobilNummer på formatet (0123-456789): ")
+    email = input("Skriv in din email adress: ")
+    förNamn = input("Skriv in ditt förnamn: ")
+    efterNamn = input("Skriv in ditt efternamn: ")
 
-    kund = f"CALL AddKund({födelseDatum},{födelseNummer},{mobilNummer},{email},{förNamn},{efterNamn})"
-    campingCursor.execute(kund)
+    campingCursor.callproc('Addkund', [födelseDatum, födelseNummer, mobilNummer, email, förNamn, efterNamn])
+
+    # kund = f"CALL AddKund({födelseDatum},{födelseNummer},{mobilNummer},{email},{förNamn},{efterNamn})"
+    # campingCursor.execute(kund)
     db.commit()
 
 
 def läggTillBokning():
-    datumOchTid = input("Skriv in datum och tid du vill boka på formatet (YYYY-MM-DD HH-MM-SS): ")
     startDatum = input("Skriv in start datum på formatet (YYYY-MM-DD): ")
     slutDatum = input("Skriv in slut datum på formatet (YYYY-MM-DD): ")
     antalVuxna = int(input("Skriv antalet vuxna"))
@@ -58,8 +58,8 @@ def läggTillBokning():
     prisVuxen = int(input("Ange pris för vuxen"))
     prisBarn = int(input("Ange pris för barn"))
 
-    bokning= f"CALL LäggTillBokning({datumOchTid}, {startDatum}, {slutDatum}, {antalVuxna}, {antalBarn}, {bokningsId}, {födelseDatum}, {födelseNummer}, {prisVuxen}, {prisBarn})"
-    #CALL LäggTillBokning('2022-03-12 15:45:00', '2022-03-15', '2022-03-19', 2, 1, 'S101', '1900-10-06', '0123', '250', '100');
+    bokning = f"CALL LäggTillBokning({startDatum}, {slutDatum}, {antalVuxna}, {antalBarn}, {bokningsId}, {födelseDatum}, {födelseNummer}, {prisVuxen}, {prisBarn})"
+    #CALL LäggTillBokning('2022-03-15', '2022-03-19', 2, 1, 'S101', '1900-10-06', '0123', '250', '100');
     campingCursor.execute(bokning)
     db.commit()
 
@@ -107,13 +107,20 @@ def ärBoendeLedigt():
 
 def visaBokningarAvPersonerFödda():
     årtal = input("Skriv 20 för 2000-talet, 201 för 2010-talet osv.")
-    visaBokningarFödda = f"CALL VisaBokningAvPersonerFödda({årtal})"
-    campingCursor.execute(visaBokningarFödda)
+    print(årtal)
+    args = (årtal,0)
+    campingCursor.callproc('dv1663camping.VisaBokningAvPersonerFödda', args)
+
+    #visaBokningarFödda = f"CALL VisaBokningAvPersonerFödda({årtal})"
+    #campingCursor.execute(visaBokningarFödda)
     showSelect()
 
 def visaKunderOlikaÅrtionden():
+    #Grupperar antal kunder under olika årtionde
+    #createView = f"create view KunderÅrtionde as select floor(year(födelsedatum) / 10) * 10 as Årtionde, count(*) as AntalKunder from Kunder group by Årtionde"
     årtionde = "SELECT * FROM KunderÅrtionde"
-    global campingCursor
+    #global campingCursor
+    #campingCursor.execute(createView)
     campingCursor.execute(årtionde)
     showSelect()
 
@@ -131,7 +138,7 @@ def Menu():
         print("6. Ta bort bokning")
         print("7. Kolla om valt boende är ledigt") 
         print("8. Visa bokningar för personer födda ...")
-        print("Visa kunder födda olika årtionden") #KunderÅrtionde
+        print("9. Visa kunder födda olika årtionden") #Fungerar
         print(". Visa förutbestämde select statements")
         print(". Visa förutbestämde select statements")
 
@@ -162,7 +169,10 @@ def Menu():
 
 def main():
     Menu()
+    campingCursor.close()
+    db.close()
 
 if __name__=="__main__":
     main()
+
 
