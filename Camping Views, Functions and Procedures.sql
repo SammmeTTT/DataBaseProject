@@ -31,9 +31,12 @@ CALL LäggTillBokning('2022-03-12 15:45:00', '2022-03-15', '2022-03-19', 2, 1, '
 
 select * from bokningstuga;
 select * from stuga;
-
+SELECT count(*) FROM bokningcamping where AntalVuxna = 2;
 select * from bokningcamping;
 select * from campingplats;
+
+select * from kunder;
+
 /*
 trigger insert, addera 1 till antalet bokningar i den tabell som avses (antingen campingplats eller stuga) 
 */
@@ -130,6 +133,7 @@ create function totalaPrisetFörBokning(Startdatum date, Slutdatum date, AntalVu
     end //
 delimiter ;
 
+select totalaPrisetFörBokning('2022-05-20', '2022-05-22', 2, 2, 'S102', 100, 50);
 #################################################################################################################
 drop function if exists ledigtBoende; 
 
