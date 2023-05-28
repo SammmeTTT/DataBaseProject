@@ -15,7 +15,8 @@ For installation:
 8. Enjoy!  
 
 links:
-*Make sure to download and install the MySQL Server version 8.0.31 suitable for your operating system from https://downloads.mysql.com/archives/community/
-*For Microsoft Windows, please navigate to this address https://downloads.mysql.com/archives/installer/
-*You can download and install the latest MySQL Workbench from https://dev.mysql.com/downloads/workbench/
-**How to setup MySQL with pyhton: https://www.youtube.com/watch?v=3vsC05rxZ8c&t=7s
+* Make sure to download and install the MySQL Server version 8.0.31 suitable
+for your operating system from https://downloads.mysql.com/archives/community/
+* For Microsoft Windows, please navigate to this address https://downloads.mysql.com/archives/installer/
+* You can download and install the latest MySQL Workbench from https://dev.mysql.com/downloads/workbench/
+** How to setup MySQL with pyhton: https://www.youtube.com/watch?v=3vsC05rxZ8c&t=7s
