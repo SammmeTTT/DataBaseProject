@@ -220,10 +220,19 @@ def visaKunderOlikaÅrtionden():
     visaSelect()
 
 def visaAntaletBokningarAntalVuxnaÄrTvå():
-    campingCursor.execute("SELECT count(*) FROM bokningcamping where AntalVuxna = 2")
+    bokningsTabell = input("Skriv in vilken tabell du vill kolla hur många bokningar som har 2 vuxna (bokningcamping/bokningstuga):")
+    campingCursor.execute("SELECT count(*) FROM %s where AntalVuxna = 2", (bokningsTabell,))
     tuple = campingCursor.fetchone()
     antaletBokningar = tuple[0]
     print(f"Antalet bokningar med två vuxna är: {antaletBokningar} st")
+
+#/*Visar totala priset för bokningar inom ett visst tidsintervall*/
+#select year(bokningstuga.Startdatum) as år, sum(TotalPris_kr) as ÅrsInkomst from bokningstuga group by år;
+#select year(bokningcamping.Startdatum) as år, sum(TotalPris_kr) as ÅrsInkomst from bokningcamping group by år;
+
+#/*Visar alla kunder som har gjort en stugbokning*/
+#select kunder.Förnamn, kunder.efternamn, bokningstuga.Födelsedatum, bokningstuga.Födelsenummer, bokningstuga.BoendeID, bokningstuga.Startdatum, bokningstuga.Slutdatum from kunder left JOIN bokningstuga on kunder.Födelsedatum = bokningstuga.Födelsedatum;
+
 
 def Menu():
     """Valmöjligheter att ställa olika förfrågningar i databasen. Avslutas vid val '0'"""
