@@ -134,13 +134,13 @@ delimiter ;
 drop function if exists ledigtBoende; 
 
  delimiter //
- CREATE FUNCTION ledigtBoende(inStartdatum date, inSlutdatum date, inBoendeID varchar(10)) RETURNS bool
+ CREATE FUNCTION ledigtBoende(inStartdatum date, inSlutdatum date, inBoendeID varchar(10)) RETURNS int
     DETERMINISTIC
 begin
-	declare ledigAttBoka bool;
+	declare ledigAttBoka int;
 	declare antalBokade integer;
 
-	set antalBokade = -1;
+	set antalBokade = -2;
 	
     if (inBoendeID like 'C%') then
 		select count(*) into antalBokade from campingplats,bokningcamping where bokningcamping.Startdatum <= inSlutdatum and bokningcamping.Slutdatum >= inStartdatum and bokningcamping.BoendeID = inBoendeID; 
@@ -148,8 +148,8 @@ begin
 		select count(*) into antalBokade from stuga,bokningstuga where bokningstuga.Startdatum <= inSlutdatum and bokningstuga.Slutdatum >= inStartdatum and bokningstuga.BoendeID = inBoendeID; 
 	end if;
 	
-	if (antalBokade > 0)then set ledigAttBoka = false; #is not availible
-	else set ledigAttBoka = true; #is availible
+	if (antalBokade > 0)then set ledigAttBoka = -1; #is not availible
+	elseif (antalBokade = 0) then set ledigAttBoka = 1; #is availible
 	end if;
 
 	return(ledigAttBoka);
@@ -157,7 +157,7 @@ begin
 delimiter ;
 
 select * from bokningstuga;
-select ledigtBoende('2022-03-15','2022-03-19','S101');
+select ledigtBoende('20220315','20220319','102');
 
 ###############################################################################################################
 #################################################################################################################
@@ -212,8 +212,8 @@ delimiter ;
 -- call AddCampingplats('C3000', 500, 50, 'ja', 0);
 ############################################################## Klar:
 drop procedure if exists VisaBokningarAvPersonFödda;
-delimiter $$
-create definer=`root`@`localhost` procedure `VisaBokningarAvPersonFödda` (in infödelsedatum varchar(10))
+delimiter //
+create procedure VisaBokningarAvPersonFödda (in infödelsedatum varchar(10))
 # Procedur som visar bokningar av personer födda på samma form som inparametern har.
 begin
 
@@ -238,7 +238,7 @@ begin
     where BS.födelsedatum like @string1
     order by BoendeID;
 
-end$$
+end//
 delimiter ;
 # Exempel:
 call VisaBokningarAvPersonFödda('19');
